@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Pretty Curl</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+        }
+        header {
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            padding: 20px 0;
+            box-shadow: 0 0 10px 0 rgba(0, 0, 0, .15);
+        }
+        #input {
+            display: block;
+            width: calc(100vw - 40px);
+            position: sticky;
+            margin: 20px;
+        }
+        .pretty {
+            text-align: center;
+        }
+        #copy {
+            margin-left: 10px;
+        }
+        #copy,
+        #pretty {
+            display: inline-block;
+            border: 1px solid #399c9c;
+            background: #399c9c;
+            color: #fff;
+            padding: 10px 50px;
+            box-shadow: 0 0 10px 0px rgba(0, 0, 0, .15);
+            font-size: 20px;
+            user-select: none;
+        }
+        #copy:hover,
+        #pretty:hover {
+            cursor: pointer;
+        }
+        #copy:active
+        #pretty:active {
+            opacity: .5;
+        }
+        .output {
+            margin: 10px 20px;
+            overflow: scroll;
+        }
+        .output pre {
+            margin: 0;
+        }
+        #output {
+            display: none;
+            border: 1px solid #e7e7e7;
+            padding: 10px;
+        }
+        .message {
+            display: none;
+            position: fixed;
+            top: 100px;
+            right: 100px;
+            box-shadow: 0 0 10px 0px rgba(27, 23, 23, 0.25);
+            background: #5CC9F5;
+            padding: 10px 30px;
+            color: #fff;
+            font-size: 16px;
+        }
+        .show-output {
+            display: block !important;
+        }
+        .active {
+            display: inline-block;
+            animation: show-message;
+            animation-duration: .25s;
+        }
+        .info {
+            background-color: #5CC9F5;
+        }
+        .warning {
+            background-color: #F6DC3D;
+        }
+        .error {
+            background-color: #F78AE0;
+        }
+        main {
+            min-height: calc(100vh - 148px);
+        }
+        footer p {
+            text-align: center;
+            color: #bbb;
+        }
+        footer a {
+            color: #bbb;
+        }
+        @keyframes show-message {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>Pretty Curl</header>
+    <main>
+        <textarea name="input" id="input" rows="10"></textarea>
+        <div class="pretty">
+            <button id="pretty">Pretty</button>
+            <button id="copy" data-clipboard-target="#input">Copy</button>
+        </div>
+        <div class="output">
+            <div id="output"></div>
+        </div>
+        <div class="message"></div>
+    </main>
+    <footer><p>&copy; 2018 <a target="_blank" href="https://sanbaofengs.com">sanbaofengs.com</a></p></footer>
+    <script src="./clipboard.min.js"></script>
+    <script>
+        function $(selector) {
+            return document.querySelector(selector);
+        }
+
+        function showMessage (msg, type = 'info') {
+            if (messageIsShowing) {
+                return;
+            }
+            messageIsShowing = true;
+            message.innerText = msg;
+            message.classList.add(type);
+            message.classList.add('active');
+            setTimeout(() => {
+                message.classList.remove('active');
+                message.classList.remove(type);
+                messageIsShowing = false;
+            }, 2000);
+        }
+
+        function doPretty (str) {
+            return str.replace(/Cookie(.+?) -H/, (matched) => matched.replace(/;/g, '; \\<br>&#09;')).replace(/-H/g, '<br> -H').replace(/--/g, '<br> --').replace(/'/g, '');
+        }
+
+        var input = $('#input');
+        var output = $('#output');
+        var pretty = $('#pretty');
+        var message = $('.message');
+        var messageIsShowing = false;
+
+        pretty.addEventListener('click', e => {
+            if (!input.value) {
+                showMessage('Nothing to pretty', 'error');
+                return;
+            }
+            var formated = doPretty(input.value);
+            output.classList.add('show-output');
+            output.innerHTML = `<pre>${formated}</pre>`;
+        });
+
+        var clipboard = new ClipboardJS('#copy');
+        clipboard.on('success', function (e) {
+            const {action, text} = e;
+            if (!text) {
+                showMessage('Nothing to copy', 'error');
+                return;
+            }
+            showMessage('Copied');
+            e.clearSelection();
+        });
+        clipboard.on('error', function (e) {
+            showMessage('Copy failed', 'error');
+        });
+    </script>
+    <script>
+        var _hmt = _hmt || [];
+        (function () {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?3acd39c965db91b5985ecf6c63cf3f9a";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+</body>
+</html>

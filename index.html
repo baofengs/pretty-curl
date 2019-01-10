@@ -22,7 +22,7 @@
             font-size: 20px;
             font-weight: 500;
             text-align: center;
-            padding: 20px 0;
+            padding: 20px;
             margin: 0;
             box-shadow: 0 0 10px 0 rgba(0, 0, 0, .15);
         }
@@ -40,6 +40,7 @@
         }
 
         .option {
+            position: relative;
             display: inline-block;
             border: 1px solid #399c9c;
             background: #399c9c;
@@ -54,17 +55,37 @@
             cursor: pointer;
         }
 
-        .option:active {
-            opacity: .5;
+        .option:active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, .1);
         }
 
         .option-pretty~.option {
             margin-left: 10px;
         }
 
+        .option-try:disabled {
+            position: relative;
+            cursor: not-allowed;
+        }
+
+        .option-try:disabled:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, .1);
+        }
+
         .output {
             margin: 20px;
-            overflow: scroll;
         }
 
         .output pre {
@@ -75,6 +96,7 @@
             display: none;
             border: 1px solid #e7e7e7;
             padding: 10px;
+            overflow-x: scroll;
         }
 
         .message {
@@ -87,6 +109,7 @@
             padding: 10px 30px;
             color: #fff;
             font-size: 16px;
+            min-width: 200px;
         }
 
         .show-output {
@@ -96,6 +119,12 @@
         .active {
             display: inline-block;
             animation: show-message;
+            animation-duration: .25s;
+        }
+
+        .hide {
+            display: inline-block;
+            animation: hide-message;
             animation-duration: .25s;
         }
 
@@ -121,7 +150,7 @@
         }
 
         footer a {
-            color: #bbb;
+            color: #399c9c;
         }
 
         #curlResult {
@@ -135,14 +164,12 @@
             color: #d4d4d4;
             text-align: left;
             border-top: 1px solid #121516;
-            padding-top: 10px;
-            padding-bottom: 10px;
+            padding: 10px 0;
             margin: 0;
         }
 
         .json-pretty {
-            padding-left: 30px;
-            padding-right: 30px;
+            padding: 0 20px;
         }
 
         .json-selected {
@@ -170,6 +197,12 @@
                 transform: translateX(100%);
             }
         }
+        @keyframes hide-message {
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -189,7 +222,7 @@
         <div class="output">
             <div id="curlResult"></div>
         </div>
-        <div class="message"></div>
+        <!-- <div class="message"></div> -->
     </main>
     <footer>
         <p>&copy; 2018 <a target="_blank" href="https://sanbaofengs.com">sanbaofengs.com</a></p>
@@ -227,22 +260,38 @@
         }
 
         function showMessage(msg, type = 'info') {
-            if (messageIsShowing) {
-                return;
-            }
+            const message = document.createElement('div');
             messageIsShowing = true;
             message.innerText = msg;
+            message.id = `message-${Date.now()}`;
+            message.classList.add('message');
             message.classList.add(type);
             message.classList.add('active');
+            document.body.appendChild(message);
             setTimeout(() => {
                 message.classList.remove('active');
-                message.classList.remove(type);
+                message.classList.add('hide');
+                setTimeout(() => {
+                    document.body.removeChild($(`#${message.id}`));
+                }, 250);
                 messageIsShowing = false;
             }, 2000);
         }
 
         function doPretty(str) {
             return str.replace(/Cookie(.+?) -H/, (matched) => matched.replace(/;/g, '; \\<br>&#09;')).replace(/-H/g, '<br> -H').replace(/--/g, '<br> --').replace(/'/g, '');
+        }
+
+        function isJSON(str) {
+            if (typeof str == 'string') {
+                try {
+                    JSON.parse(str);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+                return false;
+            }
         }
 
         var input = $('#input');
@@ -252,6 +301,34 @@
         var options = $('#options');
         var messageIsShowing = false;
         var curlResult = $('#curlResult');
+
+        const festivals = [
+            {
+                day: '12.25',
+                cursor: 'santahand.png'
+            }
+        ];
+
+        window.onload = function () {
+            const now = new Date();
+            const today = `${now.getMonth() + 1}.${now.getDate()}`;
+            const festival = festivals.find(festival => festival.day === today);
+            if (festival && festival.cursor) {
+                var css = `* { cursor: url(${festival.cursor}), default !important }`,
+                    head = document.head || document.getElementsByTagName('head')[0],
+                    style = document.createElement('style');
+
+                style.type = 'text/css';
+                if (style.styleSheet) {
+                    // This is required for IE8 and below.
+                    style.styleSheet.cssText = css;
+                } else {
+                    style.appendChild(document.createTextNode(css));
+                }
+
+                head.appendChild(style);
+            }
+        }
 
         testApi().then(res => {
             if (res && res.code === 0 && res.data.status) {
@@ -265,30 +342,42 @@
                 tryCurl.addEventListener('click', e => {
                     const curlStr = input.value;
                     if (!curlStr || !(/curl/).test(curlStr)) {
-                        showMessage('No curl, No try', 'error');
+                        showMessage('No Curl, No Try', 'error');
                         return;
                     }
+                    let tryCurlLabel = tryCurl.innerText;
+                    tryCurl.innerText = 'Trying...';
+                    tryCurl.disabled = true;
+                    const failTmpl = `
+                        <div class="json-pretty">Try failed...</div>
+                    `
                     doTry({ curlStr }).then(
                         res => {
-                            if (res && res.code === 0) {
+                            if (res && res.code === 0 && isJSON(res.data)) {
                                 const data = JSON.parse(res.data);
                                 curlResult.style.display = 'block';
                                 curlResult.innerHTML = prettyPrint.default(data, data.dimensions);
                             } else {
-                                curlResult.innerHTML = 'Try Failed...';
+                                curlResult.style.display = 'block';
+                                curlResult.innerHTML = failTmpl;
                             }
+                            tryCurl.innerText = 'Try';
+                            tryCurl.disabled = false;
                         },
                         () => {
-                            curlResult.innerHTML = 'Try Failed...';
+                            curlResult.style.display = 'block';
+                            curlResult.innerHTML = failTmpl;
+                            tryCurl.innerText = 'Try';
+                            tryCurl.disabled = false;
                         }
-                    )
+                    );
                 });
             }
         });
 
         pretty.addEventListener('click', e => {
             if (!input.value) {
-                showMessage('Nothing to pretty', 'error');
+                showMessage('Nothing to Pretty', 'error');
                 return;
             }
             var formated = doPretty(input.value);
@@ -300,7 +389,7 @@
         clipboard.on('success', function (e) {
             const { action, text } = e;
             if (!text) {
-                showMessage('Nothing to copy', 'error');
+                showMessage('Nothing to Copy', 'error');
                 return;
             }
             showMessage('Copied');

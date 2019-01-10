@@ -261,7 +261,6 @@
 
         function showMessage(msg, type = 'info') {
             const message = document.createElement('div');
-            messageIsShowing = true;
             message.innerText = msg;
             message.id = `message-${Date.now()}`;
             message.classList.add('message');
@@ -274,7 +273,6 @@
                 setTimeout(() => {
                     document.body.removeChild($(`#${message.id}`));
                 }, 250);
-                messageIsShowing = false;
             }, 2000);
         }
 
@@ -299,7 +297,6 @@
         var pretty = $('#pretty');
         var message = $('.message');
         var options = $('#options');
-        var messageIsShowing = false;
         var curlResult = $('#curlResult');
 
         const festivals = [

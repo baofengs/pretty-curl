@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,14 @@
         * {
             box-sizing: border-box;
         }
+
         body {
             padding: 0;
             margin: 0;
             font-size: 14px;
         }
-        header h1{
+
+        header h1 {
             font-size: 20px;
             font-weight: 500;
             text-align: center;
@@ -23,20 +26,20 @@
             margin: 0;
             box-shadow: 0 0 10px 0 rgba(0, 0, 0, .15);
         }
+
         #input {
             display: block;
             width: calc(100vw - 40px);
             position: sticky;
             margin: 20px;
         }
+
         .pretty {
             text-align: center;
+            user-select: none;
         }
-        #copy {
-            margin-left: 10px;
-        }
-        #copy,
-        #pretty {
+
+        .option {
             display: inline-block;
             border: 1px solid #399c9c;
             background: #399c9c;
@@ -46,26 +49,34 @@
             font-size: 20px;
             user-select: none;
         }
-        #copy:hover,
-        #pretty:hover {
+
+        .option:hover {
             cursor: pointer;
         }
-        #copy:active
-        #pretty:active {
+
+        .option:active {
             opacity: .5;
         }
+
+        .option-pretty~.option {
+            margin-left: 10px;
+        }
+
         .output {
             margin: 20px;
             overflow: scroll;
         }
+
         .output pre {
             margin: 0;
         }
+
         #output {
             display: none;
             border: 1px solid #e7e7e7;
             padding: 10px;
         }
+
         .message {
             display: none;
             position: fixed;
@@ -77,33 +88,83 @@
             color: #fff;
             font-size: 16px;
         }
+
         .show-output {
             display: block !important;
         }
+
         .active {
             display: inline-block;
             animation: show-message;
             animation-duration: .25s;
         }
+
         .info {
             background-color: #5CC9F5;
         }
+
         .warning {
             background-color: #F6DC3D;
         }
+
         .error {
             background-color: #F78AE0;
         }
+
         main {
             min-height: calc(100vh - 142px);
         }
+
         footer p {
             text-align: center;
             color: #bbb;
         }
+
         footer a {
             color: #bbb;
         }
+
+        #curlResult {
+            display: none;
+            font-family: Menlo, Monaco, "Courier New", monospace;
+            font-weight: normal;
+            font-size: 14px;
+            line-height: 16px;
+            letter-spacing: 0;
+            background-color: #24282A;
+            color: #d4d4d4;
+            text-align: left;
+            border-top: 1px solid #121516;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            margin: 0;
+        }
+
+        .json-pretty {
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+
+        .json-selected {
+            background-color: rgba(139, 191, 228, 0.19999999999999996);
+        }
+
+        .json-string {
+            color: #6caedd;
+        }
+
+        .json-key {
+            color: #ec5f67;
+        }
+
+        .json-boolean {
+            color: #99c794;
+        }
+
+        .json-number {
+            color: #99c794;
+        }
+
         @keyframes show-message {
             from {
                 transform: translateX(100%);
@@ -111,27 +172,61 @@
         }
     </style>
 </head>
+
 <body>
-    <header><h1>Pretty Curl</h1></header>
+    <header>
+        <h1>Pretty Curl</h1>
+    </header>
     <main>
         <textarea name="input" id="input" rows="10"></textarea>
-        <div class="pretty">
-            <button id="pretty">Pretty</button>
-            <button id="copy" data-clipboard-target="#input">Copy</button>
+        <div id="options" class="pretty">
+            <button class="option option-pretty" id="pretty">Pretty</button>
+            <button class="option option-copy" id="copy" data-clipboard-target="#input">Copy</button>
         </div>
         <div class="output">
             <div id="output"></div>
         </div>
+        <div class="output">
+            <div id="curlResult"></div>
+        </div>
         <div class="message"></div>
     </main>
-    <footer><p>&copy; 2018 <a target="_blank" href="https://sanbaofengs.com">sanbaofengs.com</a></p></footer>
+    <footer>
+        <p>&copy; 2018 <a target="_blank" href="https://sanbaofengs.com">sanbaofengs.com</a></p>
+    </footer>
     <script src="./clipboard.min.js"></script>
+    <script src="./json2html.js"></script>
     <script>
+        function testApi() {
+            return fetch('https://api.sanbaofengs.com/test').then(
+                res => {
+                    return res.json();
+                }
+            );
+        }
+
+        function doTry(params) {
+            return fetch('https://api.sanbaofengs.com/pretty-curl', {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(params)
+            }).then(
+                res => {
+                    if (res.status === 200) {
+                        return res.json();
+                    }
+                }
+            );
+        }
+
         function $(selector) {
             return document.querySelector(selector);
         }
 
-        function showMessage (msg, type = 'info') {
+        function showMessage(msg, type = 'info') {
             if (messageIsShowing) {
                 return;
             }
@@ -146,7 +241,7 @@
             }, 2000);
         }
 
-        function doPretty (str) {
+        function doPretty(str) {
             return str.replace(/Cookie(.+?) -H/, (matched) => matched.replace(/;/g, '; \\<br>&#09;')).replace(/-H/g, '<br> -H').replace(/--/g, '<br> --').replace(/'/g, '');
         }
 
@@ -154,7 +249,42 @@
         var output = $('#output');
         var pretty = $('#pretty');
         var message = $('.message');
+        var options = $('#options');
         var messageIsShowing = false;
+        var curlResult = $('#curlResult');
+
+        testApi().then(res => {
+            if (res && res.code === 0 && res.data.status) {
+                const button = document.createElement('button');
+                button.id = 'try';
+                button.innerText = 'Try';
+                button.classList.add('option');
+                button.classList.add('option-try');
+                options.appendChild(button);
+                var tryCurl = $('#try');
+                tryCurl.addEventListener('click', e => {
+                    const curlStr = input.value;
+                    if (!curlStr || !(/curl/).test(curlStr)) {
+                        showMessage('No curl, No try', 'error');
+                        return;
+                    }
+                    doTry({ curlStr }).then(
+                        res => {
+                            if (res && res.code === 0) {
+                                const data = JSON.parse(res.data);
+                                curlResult.style.display = 'block';
+                                curlResult.innerHTML = prettyPrint.default(data, data.dimensions);
+                            } else {
+                                curlResult.innerHTML = 'Try Failed...';
+                            }
+                        },
+                        () => {
+                            curlResult.innerHTML = 'Try Failed...';
+                        }
+                    )
+                });
+            }
+        });
 
         pretty.addEventListener('click', e => {
             if (!input.value) {
@@ -168,7 +298,7 @@
 
         var clipboard = new ClipboardJS('#copy');
         clipboard.on('success', function (e) {
-            const {action, text} = e;
+            const { action, text } = e;
             if (!text) {
                 showMessage('Nothing to copy', 'error');
                 return;
@@ -190,4 +320,5 @@
         })();
     </script>
 </body>
+
 </html>

@@ -26,6 +26,15 @@
             margin: 0;
             box-shadow: 0 0 10px 0 rgba(0, 0, 0, .15);
         }
+        
+        header h1 a {
+            color: #399c9c;
+            text-decoration: none;
+        }
+
+        header h1 a:hover {
+            text-decoration: underline;
+        }
 
         #input {
             display: block;
@@ -151,6 +160,11 @@
 
         footer a {
             color: #399c9c;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
         }
 
         #curlResult {
@@ -208,7 +222,7 @@
 
 <body>
     <header>
-        <h1>Pretty Curl</h1>
+        <h1><a href="https://github.com/x-bao/pretty-curl" target="_blank">Pretty Curl</a></h1>
     </header>
     <main>
         <textarea name="input" id="input" rows="10"></textarea>

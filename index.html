@@ -243,8 +243,15 @@
     <script src="./clipboard.min.js"></script>
     <script src="./json2html.js"></script>
     <script>
+        function buildPromise (url1, url2, params = {}) {
+            return Promise.race([
+                fetch(url1, params),
+                fetch(url2, params)
+            ]);
+        }
+
         function testApi() {
-            return fetch('https://api.sanbaofengs.com/test').then(
+            return buildPromise('https://api.sanbaofengs.com/test', 'https://api.sanbf.cn/test').then(
                 res => {
                     return res.json();
                 }
@@ -252,14 +259,15 @@
         }
 
         function doTry(params) {
-            return fetch('https://api.sanbaofengs.com/pretty-curl', {
+            const fetchParams = {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(params)
-            }).then(
+            };
+            return buildPromise('https://api.sanbaofengs.com/pretty-curl', 'https://api.sanbf.cn/pretty-curl', fetchParams).then(
                 res => {
                     if (res.status === 200) {
                         return res.json();

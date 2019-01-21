@@ -425,7 +425,7 @@
                 showMessage('Nothing to Pretty', 'error');
                 return;
             }
-            if (oldInputValue.trim() != input.value) {
+            if (oldInputValue.trim() != input.value.trim()) {
                 curlResult.innerHTML = '';
             }
             oldInputValue = input.value;

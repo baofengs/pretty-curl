@@ -346,6 +346,7 @@
         var message = $('.message');
         var options = $('#options');
         var curlResult = $('#curlResult');
+        var oldInputValue = '';
 
         const festivals = [
             {
@@ -424,10 +425,13 @@
                 showMessage('Nothing to Pretty', 'error');
                 return;
             }
+            if (oldInputValue.trim() != input.value) {
+                curlResult.innerHTML = '';
+            }
+            oldInputValue = input.value;
             var formated = doPretty(input.value);
             output.classList.add('show-output');
             output.innerHTML = `<pre>${formated}</pre>`;
-            curlResult.innerHTML = '';
         });
 
         var clipboard = new ClipboardJS('#copy');

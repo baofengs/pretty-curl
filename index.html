@@ -95,6 +95,8 @@
 
         .output {
             margin: 20px;
+            background-color: #24282A;
+            color: #d4d4d4;
         }
 
         .output pre {
@@ -217,6 +219,18 @@
                 opacity: 0;
             }
         }
+        .key {
+            color: #ec5f67;
+        }
+        .value {
+            color: #6caedd;
+        }
+        .selected {
+            background-color: rgba(139, 191, 228, 0.19999999999999996);
+        }
+        .curl-data {
+            color: #99c794;
+        }
     </style>
 </head>
 
@@ -298,7 +312,19 @@
         }
 
         function doPretty(str) {
-            return str.replace(/Cookie(.+?) -H/, (matched) => matched.replace(/;/g, '; \\<br>&#09;')).replace(/-H/g, '<br> -H').replace(/--/g, '<br> --').replace(/'/g, '');
+            return str.replace(/-H '(.*?)'/g, function (match, ...p) {
+                return '-H ' +  p[0].split(': ').map((item, index) => {
+                    return index === 0 ? `<span class="key">${item}: </span>` : `<span class="value">${item}</span>`;
+                }).join('');
+            }).replace(/Cookie(.+?) -H/, (matched) => {
+                return matched.replace(/-Token=(.*?)<\/span>/, (mmatched, ...p) => {
+                    return `-Token=<span class="selected">${p[0]}</span></span>`
+                }).replace(/;/g, '; \\<br>&#09;')
+            }).replace(/-H/g, '<br> -H').replace(/--/g, '<br> --').replace(/--data(.*)'/, (matched) => {
+                return `<span class="selected curl-data">${matched}</span>`
+            }).replace(/'/g, '');
+            // without CSS
+            // return str.replace(/Cookie(.+?) -H/, (matched) => matched.replace(/;/g, '; \\<br>&#09;&nbsp;&nbsp;')).replace(/-H/g, '<br> -H').replace(/--/g, '<br> --').replace(/'/g, '');
         }
 
         function isJSON(str) {

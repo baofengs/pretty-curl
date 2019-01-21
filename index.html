@@ -427,6 +427,7 @@
             var formated = doPretty(input.value);
             output.classList.add('show-output');
             output.innerHTML = `<pre>${formated}</pre>`;
+            curlResult.innerHTML = '';
         });
 
         var clipboard = new ClipboardJS('#copy');
